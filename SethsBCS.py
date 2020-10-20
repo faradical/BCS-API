@@ -12,6 +12,7 @@ Description:	Contains classes and functions for building applications to rapidly
 				duties on BootCampSpot.
 
 Comments:		10-10-20 Began writing script
+				10-20-20 First commit and push to GitHub
 --------
 '''
 
