@@ -13,7 +13,7 @@ Description:	Contains classes and functions for building applications to rapidly
 
 Comments:		10-10-20 Began writing script
 				10-20-20 First commit and push to GitHub
---------
+---------------------------------------------------------------------------------------------------------------------
 '''
 
 
@@ -139,7 +139,7 @@ def cohortConstructor(email, password, enrollmentID):
 	return {"studentsList": students, "assignments": assignments}
 
 
-def getGrades(email, password, courseID, selected_student=""):    
+def getGrades(email, password, courseID, enrollmentId, selected_student=""):	
 
 	s = BCSAPIlogin(email, password)
 
@@ -156,35 +156,39 @@ def getGrades(email, password, courseID, selected_student=""):
 
 		students = list(gradebook['STUDENT'].unique())
 
-		assignments = list(gradebook['ASSIGNMENT'].unique())
-		assignments = [ass for ass in assignments if "Prework" not in ass and "Milestone" not in ass and "Career Services" not in ass]
+		b = brokerLogin(email, password)
+		data = json.dumps({"enrollmentId": enrollmentId})
+		response = b.post("https://bootcampspot.com/broker/coursework", data=data)
+		
+		if response.status_code == 200:
+			asses = response.json()['calendarAssignments']
+			assignments = []
+			for ass in asses:
+				if "Prework" not in ass['title'] and "Milestone" not in ass['title'] and "Career Services" not in ass['title']:
+					assignments.append([ass['title'], ass['dueDate'].split('T')[0]])
 
-		def SortFunc(ass):
-			if "Project" in ass:
-				return 1000
-			else:
-				return int(ass.split(".")[0])
+			grades_dict = {"Student": []}
+			
+			for ass in assignments:
+				grades_dict[' | '.join(ass)] = []
 
-		assignments.sort(key=SortFunc)
+			for student in students:
+				grades_dict['Student'].append(student) #.replace("\xa0"," "))
+				for assignment in assignments:
+					student_gradebook = gradebook[gradebook['STUDENT'] == student]
+					sub_status = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment[0]]['SUBMISSION STATUS'].values[0]
+					grade = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment[0]]['GRADE'].values[0]
+					if grade != 'None':
+						grade = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment[0]]['GRADE'].values[0]
+					else:
+						grade = "Not Submitted"
+					grades_dict[' | '.join(assignment)].append(grade)
 
-		grades_dict = {"Student": []}
-		for ass in assignments:
-			grades_dict[ass] = []
+			gradesDF = pd.DataFrame(grades_dict).set_index('Student')
 
-		for student in students:
-			grades_dict['Student'].append(student) #.replace("\xa0"," "))
-			for assignment in assignments:
-				student_gradebook = gradebook[gradebook['STUDENT'] == student]
-				sub_status = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment]['SUBMISSION STATUS'].values[0]
-				grade = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment]['GRADE'].values[0]
-				if grade != 'None':
-					grade = student_gradebook[student_gradebook['ASSIGNMENT'] == assignment]['GRADE'].values[0]
-				else:
-					grade = "Not Submitted"
-				grades_dict[assignment].append(grade)
-
-		gradesDF = pd.DataFrame(grades_dict).set_index('Student')
-
+		else:
+			print(f"Assignments retrieval request failed with exit code {response.status_code}")
+			gradesDF = ""
 	else:
 		print(f"Grades retrieval request failed with exit code {response.status_code}")
 		gradesDF = ""
@@ -285,7 +289,7 @@ def convertGrade(grade):
 
 
 class student:
-	def __init__(self, student, email, password, courseID, assignments):
+	def __init__(self, student, email, password, courseID, enrollmentID, assignments):
 
 		self.name = student['Name']
 		self.id = student['id']
@@ -293,6 +297,7 @@ class student:
 		self.myEmail = email
 		self.myPassword = password
 		self.courseID = courseID
+		self.enrollmentID = enrollmentID
 		self.assignmentsList = {}
 		for ass in assignments:
 			self.assignmentsList[ass["assignment"]] = ass["id"]
@@ -301,7 +306,7 @@ class student:
 			self.assignment[ass["assignment"]] = assignment(ass["id"], self.id, self.myEmail, self.myPassword)
 
 	def grades(self):
-		return getGrades(self.myEmail, self.myPassword, self.courseID, self.name)
+		return getGrades(self.myEmail, self.myPassword, self.courseID, self.enrollmentID, self.name)
 
 	def help(self):
 		print()
@@ -467,10 +472,10 @@ class cohort:
 		self.assignmentsList = cohort["assignments"]
 		self.student = {}
 		for stu in self.studentsList:
-			self.student[stu["Name"]] = student(stu, self.email, self.password, course['courseId'], self.assignmentsList)
+			self.student[stu["Name"]] = student(stu, self.email, self.password, course['courseId'], self.enrollmentID, self.assignmentsList)
 
 	def gradebook(self):
-		return getGrades(self.email, self.password, self.courseID)
+		return getGrades(self.email, self.password, self.courseID, self.enrollmentID)
 
 	def help(self):
 		print()
