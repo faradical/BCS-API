@@ -10,4 +10,4 @@ Currently the best way to use this library is to clone it. In future, it will ne
 Lol IDK
 
 ## Feed Me
-(paypal)[https://paypal.me/feedseth?locale.x=en_US]
+[paypal](https://paypal.me/feedseth?locale.x=en_US)
