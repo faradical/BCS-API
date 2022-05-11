@@ -1,13 +1,21 @@
-# BCS-API
+<h1 align="center>BCS-API</h1>
+
+## Table of Contents
+1. <a hfref="#1">Background</a>
+1. <a hfref="#1">Installation</a>
+1. <a hfref="#1">Getting Started</a>
+1. <a hfref="#1">Classes</a>
+1. <a hfref="#1">Donate</a>
 
 ## Background
-The BCSAPI is a Python module desgined to allow Trilogy employees to build applications streamlining and automating administrative duties on BootCampSpot.
+The BCS-API is a Python module desgined to allow Trilogy employees to build applications streamlining and automating administrative duties on BootCampSpot.
 
-## Install Instructions
+## Installation
 Currently the best way to use this library is to clone it. In future, it will neatly condensed into a pip installable distribution package.
 
-## Usage
-Lol IDK
+## Getting Started
 
-## Feed Me
+## Classes
+
+## Donate
 [paypal](https://paypal.me/feedseth?locale.x=en_US)
